@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+	<zookeepers>
+		<defaultCfg>
+			<sessionTimeoutSec>4</sessionTimeoutSec>
+		</defaultCfg>
+
+		<zookeeper>
+			<name>z1</name>
+			<address>192.168.1.28:2181,192.168.1.22:2181</address>
+			<sessionTimeoutSec>5</sessionTimeoutSec>
+			<services>
+			<!-- 
+				<service>
+					<serviceName>adproxy</serviceName>
+					<servicePath>/services/adproxy</servicePath>
+				</service>
+			 -->
+				<service>
+					<serviceName>sac</serviceName>
+					<servicePath>/services/sac</servicePath>
+				</service>
+			</services>
+		</zookeeper>
+	</zookeepers>
+
+	<providers>
+		<defaultCfg>
+			<minConn>1</minConn>
+			<maxConn>10</maxConn>
+			<blockWhenExhausted>true</blockWhenExhausted>
+			<maxWaitMillis>100</maxWaitMillis>
+			<evictionIdle>true</evictionIdle>
+		</defaultCfg>
+
+<!-- 
+		<provider>
+			<serviceName>adproxy</serviceName>
+			<serviceClass>test.distribute.client.AdProxy</serviceClass>
+		</provider>
+ -->
+		<provider>
+			<serviceName>sac</serviceName>
+			<serviceClass>test.distribute.client.SACProxy</serviceClass>
+			<minConn>4</minConn>
+			<maxConn>10</maxConn>
+			<blockWhenExhausted>false</blockWhenExhausted>
+			<maxWaitMillis>10</maxWaitMillis>
+		</provider>
+	</providers>
+
+</root>
