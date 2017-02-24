@@ -1,6 +1,10 @@
 package com.xuehao.smartqueue.uia.impl;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +30,44 @@ import com.xuehao.smartqueue.utils.StringUtils;
  * @author 余学好(qq:398520134)
  * @date 2016年10月12日
  */
-public class DefaultConfigLoader implements ConfigLoader {
+public class DefaultConfigLoader implements ConfigLoader { 
+	private static final String CLASSPATH_PREFIX = "classpath:";
+
+	@Override
+	public List<ZkCluster> load(String path) {
+		if (!path.startsWith(CLASSPATH_PREFIX)) {
+			path = CLASSPATH_PREFIX + path;
+		}
+
+		path = path.substring(CLASSPATH_PREFIX.length());
+
+		// 先从classpath搜索
+		URL url = getClass().getResource("/" + path);
+		if (null != url) {
+			return loadFromUrl(url);
+		}
+
+		// 再从磁盘搜索
+		return loadFromFile(path);
+	}
+
+	@Override
+	public List<ZkCluster> loadFromUrl(URL url) {
+		InputStream in = null;
+		try {
+			in = url.openStream();
+			return loadFrom(in);
+		} catch (IOException e) {
+			throw new ConfigException(e.getMessage(), e);
+		} finally {
+			if (null != in) {
+				try {
+					in.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
 
 	@Override
 	public List<ZkCluster> loadFromFile(String filePath) {
@@ -35,11 +76,30 @@ public class DefaultConfigLoader implements ConfigLoader {
 
 	@Override
 	public List<ZkCluster> loadFromFile(File file) {
+		InputStream in = null;
+		try {
+			in = new FileInputStream(file);
+			return loadFrom(in);
+		} catch (ConfigException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ConfigException(e);
+		} finally {
+			if (null != in) {
+				try {
+					in.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+
+	private List<ZkCluster> loadFrom(InputStream in) {
 		List<ZkCluster> list = new ArrayList<ZkCluster>();
 
 		SAXBuilder builder = new SAXBuilder();
 		try {
-			Document document = (Document) builder.build(file);
+			Document document = (Document) builder.build(in);
 			Element rootNode = document.getRootElement();
 
 			Element root = rootNode.getChild("zookeepers");
@@ -302,5 +362,7 @@ public class DefaultConfigLoader implements ConfigLoader {
 			throw new ConfigException(e);
 		}
 		return list;
+
 	}
+
 }
