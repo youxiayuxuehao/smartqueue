@@ -109,6 +109,11 @@ public class ServiceContainer implements IServiceContainer {
 
 	@Override
 	public AbsRpcClientProxy borrowClient(String serviceName) {
+		return borrowClient(serviceName, null);
+	}
+
+	@Override
+	public AbsRpcClientProxy borrowClient(String serviceName, String sessionId) {
 		long now = System.currentTimeMillis();
 		try {
 			if (!ready) {
@@ -119,7 +124,7 @@ public class ServiceContainer implements IServiceContainer {
 			}
 			ServiceGroup group = getServiceGroup(serviceName);
 			if (null != group) {
-				return group.borrowClient(serviceName);
+				return group.borrowClient(serviceName, sessionId);
 			}
 			log.error("borrowClient {} fail, no ServiceGroup", serviceName);
 			return null;

@@ -16,10 +16,14 @@ import org.jboss.netty.util.internal.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.xuehao.smartqueue.uia.Constants;
 import com.xuehao.smartqueue.uia.IRpcClientCreator;
 import com.xuehao.smartqueue.uia.ServiceGroup;
 import com.xuehao.smartqueue.uia.ServiceMetadata;
+import com.xuehao.smartqueue.utils.StringUtils;
 
 public class DefaultServiceGroup implements ServiceGroup {
 
@@ -43,24 +47,39 @@ public class DefaultServiceGroup implements ServiceGroup {
 		this.rpcClientCreator = rpcClientCreator;
 	}
 
-	@Override
 	public AbsRpcClientProxy borrowClient(String serviceName) {
+		return borrowClient(serviceName, null);
+	}
 
+	private int getAccessIndex(String sessionId) {
+		int size = nodeSize.get();
+		if (0 == size) {
+			return -1;
+		}
+
+		if (StringUtils.isEmpty(sessionId)) {
+			return (int) (accessPointer.incrementAndGet() % size);
+		} else {
+			HashCode hashCode = Hashing.murmur3_32().hashString(sessionId,
+					Charsets.UTF_8);
+			int ser = Math.abs(hashCode.asInt());
+			return ser % size;
+		}
+	}
+
+	@Override
+	public AbsRpcClientProxy borrowClient(String serviceName, String sessionId) {
 		int retry = 0;
-		long ser = 0;
 		int index = 0;
 		String node = null;
 
 		while (retry++ < 2) {
-
-			int size = nodeSize.get();
-			if (0 == size) {
+			index = getAccessIndex(sessionId);
+			if (-1 == index) {
 				log.error("borrowClient {} fail,no visible node", serviceName);
 				return null;
 			}
 
-			ser = accessPointer.incrementAndGet();
-			index = (int) (ser % size);
 			try {
 				node = localAllNodes.get(index); // 节点变化时，可能存在访问失败的风险，使用重试机制
 			} catch (Exception e) {
