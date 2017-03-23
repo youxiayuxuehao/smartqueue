@@ -62,8 +62,9 @@ public class DefaultServiceGroup implements ServiceGroup {
 		} else {
 			HashCode hashCode = Hashing.murmur3_32().hashString(sessionId,
 					Charsets.UTF_8);
-			int ser = Math.abs(hashCode.asInt());
-			return ser % size;
+			
+			int ser = hashCode.asInt() % size;
+			return ser < 0 ? ser + size : ser;
 		}
 	}
 
